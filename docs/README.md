@@ -7,6 +7,14 @@
 
 1. residents
 
+### Feautres
+
+1. Child / No Child
+2. Pet / No pet
+3. Income
+4. work distance
+5. work minutes
+
 ## Data Spliting Techniques
 
 1. Bootstrap Sampling
