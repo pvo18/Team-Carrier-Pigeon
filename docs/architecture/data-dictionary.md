@@ -75,7 +75,7 @@ Measured 2026-10-15 on `data/raw/` with a one-off pandas check (not committed).
 
 **Cleaning rule:** keep every household that appears in `weekly_panel.csv`; never drop a row for a missing feature. [S]
 
-**Rows after cleaning:** there is no fixed train/validation/test split. Every model is scored with grouped k-fold and bootstrap (EVAL-3, EVAL-4).
+**Rows after cleaning:** there is no fixed train/validation/test split. The split assignments live in `data/processed/splits/` (see Processed Files). Every model is scored with grouped k-fold and bootstrap (EVAL-3, EVAL-4).
 
 | Unit                  | Count |
 | --------------------- | ----- |
@@ -105,12 +105,14 @@ Measured 2026-10-15 on `data/raw/` with a one-off pandas check (not committed).
 
 ## Processed Files (issue: PRE-2)
 
-Built by `preprocessing/preprocess.py`. `data/` is gitignored, so rebuild with `python scripts/set-up-repo.py` then the preprocessing script after cloning. File layout below is suggested. [S]
+Built by `preprocessing/preprocess.py`. `data/` is gitignored, so rebuild with `python scripts/set-up-repo.py` then the preprocessing script after cloning. Built and checked 2026-10-20: a fresh run passes every assert in the script. Both splits are seeded (`SEED = 42`), so every rerun produces identical files.
 
 | File                                 | Definition                                                                                                                        | Rows  | Departure rate |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ----- | -------------- |
-| `data/processed/model_table.parquet` | One row per household-week: `resident_id`, `site`, the target, and the model features, unscaled, blanks kept                      | 6,731 | 1.86%          |
-| `data/processed/audit_table.csv`     | One row per household: `resident_id`, `site`, `moved_out`, the `pc_*` columns, `sc_eviction_history`, and the filter-only columns | 444   | —              |
+| `data/processed/model_table.parquet` | One row per household-week, 12 columns: `resident_id`, `site`, `week_index`, the target, and the 8 other model features, unscaled, blanks kept | 6,731 | 1.86%          |
+| `data/processed/splits/kfold.parquet` | Test households for each of the 25 k-fold splits (5 folds × 5 repeats, grouped by household, stratified on `moved_out`): `resident_id`, `repeat`, `fold`. Each repeat lists every household exactly once; each fold holds 88–89 households and exactly 25 move-outs | 2,220 | — |
+| `data/processed/splits/bootstrap.parquet` | 100 bootstrap replicates of the 444 households: `resident_id`, `replicate`, `n_draws` (times drawn, 0–7). Each replicate draws exactly 444; about 36.8% are out-of-bag (`n_draws == 0`) | 44,400 | — |
+| `data/processed/audit_table.csv` (not built yet) | One row per household: `resident_id`, `site`, `moved_out`, the `pc_*` columns, `sc_eviction_history`, and the filter-only columns | 444   | —              |
 
 Keeping the protected columns in a separate file means they can't be fed to a model by accident. Rows are sorted by `resident_id`, then `week_index`.
 
@@ -120,7 +122,11 @@ Keeping the protected columns in a separate file means they can't be fed to a mo
 | int         | `week_index`, `churned_this_week`                                                                                                                                                                     |
 | float       | `income_monthly_est`, `rent_to_income_ratio`, `work_drive_min`, `prior_home_distance_mi`, `n_fobs`, `n_pets`, `outstanding_lag1`, `delinquent_lag1` (float because it has blanks) |
 
-- Scaled or encoded values are never written here (PRE-4).
+- Scaled, encoded, or imputed values are never written here (PRE-4).
+- The split files store households, not rows. To get a split, join on `resident_id`:
+  - k-fold: test = the households listed for that `(repeat, fold)`; train = every other household.
+  - bootstrap: train = households with `n_draws > 0`, each repeated `n_draws` times (or pass `n_draws` as a sample weight); test = the out-of-bag households, `n_draws == 0`.
+- The expected counts the script asserts (455 residents, 6,731 weekly rows, 444 households, 125 move-outs) are constants copied from the provider's `DATA_DICTIONARY.md` and `data/reference/km_survival.csv`, not computed by the script.
 
 ## Dropped Columns
 
