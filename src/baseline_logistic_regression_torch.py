@@ -11,13 +11,24 @@ so preprocess.py's main() has to be run at least once first to produce them.
 
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import torch
 from sklearn.calibration import calibration_curve
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
+from sklearn.metrics import (
+    brier_score_loss,
+    confusion_matrix,
+    f1_score,
+    log_loss,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from torch import nn
@@ -50,6 +61,11 @@ NUMERIC_FEATURES = [
 
 #Categorical input columns that get imputed and one-hot encoded.
 CATEGORICAL_FEATURES = ["site"]
+
+ID_COLUMN = "resident_id"
+WEEK_COLUMN = "week_index"
+HOUSEHOLD_MOVEOUT_THRESHOLD = 0.50
+
 
 
 #Builds the object that turns raw DataFrame cols into a numeric matrix.
@@ -251,6 +267,154 @@ def evaluate_baseline(model: nn.Module, preprocessor: ColumnTransformer, eval_df
     }
 
 
+# Household-level move-out counts / classification.
+def _predict_weekly_probabilities(
+    model: nn.Module,
+    preprocessor: ColumnTransformer,
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Return one weekly move-out probability for every resident-week row."""
+    X, y = _dataframe_to_arrays(df, preprocessor, fit=False)
+    model.eval()
+    with torch.no_grad():
+        probs = torch.sigmoid(model(torch.from_numpy(X))).numpy()
+
+    out = df[[ID_COLUMN, WEEK_COLUMN]].copy()
+    out[LABEL_COLUMN] = y.astype(int)
+    out["predicted_hazard"] = probs.astype(float)
+    return out
+
+
+def summarize_household_moveout_classification(
+    model: nn.Module,
+    preprocessor: ColumnTransformer,
+    df: pd.DataFrame,
+    threshold: float = HOUSEHOLD_MOVEOUT_THRESHOLD,
+) -> tuple[dict, pd.DataFrame]:
+    """Convert weekly hazards into one move-out prediction per resident.
+
+    Household cumulative move-out risk is 1 - product(1 - weekly_hazard).
+    We report both the expected number of move-outs (sum of risks) and a hard
+    predicted count at the supplied threshold. Each resident is counted once.
+    """
+    weekly = _predict_weekly_probabilities(model, preprocessor, df)
+    rows = []
+
+    for resident_id, group in weekly.groupby(ID_COLUMN, sort=False):
+        group = group.sort_values(WEEK_COLUMN)
+        hazards = np.clip(
+            group["predicted_hazard"].to_numpy(dtype=float),
+            0.0,
+            1.0 - 1e-12,
+        )
+        survival = float(np.exp(np.log1p(-hazards).sum()))
+        cumulative_risk = 1.0 - survival
+        actual_moveout = int(group[LABEL_COLUMN].max())
+        predicted_moveout = int(cumulative_risk >= threshold)
+
+        rows.append({
+            ID_COLUMN: resident_id,
+            "actual_moveout": actual_moveout,
+            "cumulative_moveout_risk": cumulative_risk,
+            "predicted_moveout": predicted_moveout,
+        })
+
+    households = pd.DataFrame(rows)
+    y_true = households["actual_moveout"].to_numpy(dtype=int)
+    y_pred = households["predicted_moveout"].to_numpy(dtype=int)
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+
+    metrics = {
+        "n_households": int(len(households)),
+        "actual_moveouts": int(y_true.sum()),
+        "expected_moveouts": float(households["cumulative_moveout_risk"].sum()),
+        "predicted_moveouts": int(y_pred.sum()),
+        "threshold": float(threshold),
+        "true_positives": int(tp),
+        "false_positives": int(fp),
+        "true_negatives": int(tn),
+        "false_negatives": int(fn),
+        "precision": float(precision_score(y_true, y_pred, zero_division=0)),
+        "recall": float(recall_score(y_true, y_pred, zero_division=0)),
+        "f1": float(f1_score(y_true, y_pred, zero_division=0)),
+        "confusion_matrix": [[int(tn), int(fp)], [int(fn), int(tp)]],
+    }
+    return metrics, households
+
+
+def print_household_moveout_summary(split_name: str, metrics: dict) -> None:
+    print(
+        f"  {split_name}: n_households={metrics['n_households']}  "
+        f"actual_moveouts={metrics['actual_moveouts']}  "
+        f"expected_moveouts={metrics['expected_moveouts']:.2f}  "
+        f"predicted_moveouts@{metrics['threshold']:.2f}={metrics['predicted_moveouts']}"
+    )
+    print(
+        f"           TP={metrics['true_positives']}  FP={metrics['false_positives']}  "
+        f"TN={metrics['true_negatives']}  FN={metrics['false_negatives']}  "
+        f"precision={metrics['precision']:.4f}  recall={metrics['recall']:.4f}  "
+        f"f1={metrics['f1']:.4f}"
+    )
+    print(
+        "           confusion_matrix=[[TN, FP], [FN, TP]] = "
+        f"{metrics['confusion_matrix']}"
+    )
+
+
+def save_run_outputs(
+    output_dir: Path,
+    repeat: int,
+    fold: int,
+    weekly_results: dict,
+    household_results: dict,
+    household_predictions: dict[str, pd.DataFrame],
+) -> tuple[Path, Path]:
+    """Always save comparable metrics and household predictions for one run."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    metric_rows = []
+    for split_name in ("train", "eval"):
+        weekly = weekly_results[split_name]
+        household = household_results[split_name]
+        metric_rows.append({
+            "model": "logistic_regression",
+            "repeat": repeat,
+            "fold": fold,
+            "split": split_name,
+            "n_rows": weekly["n_rows"],
+            "n_events": weekly["n_events"],
+            "brier_score": weekly["brier_score"],
+            "log_loss": weekly["log_loss"],
+            "roc_auc": weekly["roc_auc"],
+            "n_households": household["n_households"],
+            "actual_moveouts": household["actual_moveouts"],
+            "expected_moveouts": household["expected_moveouts"],
+            "predicted_moveouts": household["predicted_moveouts"],
+            "threshold": household["threshold"],
+            "true_positives": household["true_positives"],
+            "false_positives": household["false_positives"],
+            "true_negatives": household["true_negatives"],
+            "false_negatives": household["false_negatives"],
+            "precision": household["precision"],
+            "recall": household["recall"],
+            "f1": household["f1"],
+        })
+
+    metrics_path = output_dir / f"repeat_{repeat}_fold_{fold}_metrics.csv"
+    pd.DataFrame(metric_rows).to_csv(metrics_path, index=False)
+
+    pred_frames = []
+    for split_name in ("train", "eval"):
+        frame = household_predictions[split_name].copy()
+        frame.insert(0, "split", split_name)
+        pred_frames.append(frame)
+
+    household_path = output_dir / f"repeat_{repeat}_fold_{fold}_household_classification.csv"
+    pd.concat(pred_frames, ignore_index=True).to_csv(household_path, index=False)
+
+    return metrics_path, household_path
+
+
 #Run evaluation on both the training and eval sets.
 def compare_train_vs_eval(
     #Trained model, fitted preprocessor, and two data splits.
@@ -266,12 +430,39 @@ def compare_train_vs_eval(
     }
 
 
+def _load_repo_preprocess_module():
+    """Find and load this repo's preprocessing/preprocess.py robustly."""
+    this_file = Path(__file__).resolve()
+    candidates = [
+        this_file.parent / "preprocess.py",  # if baseline is placed in preprocessing/
+        this_file.parent.parent / "preprocessing" / "preprocess.py",  # normal src/ layout
+    ]
+    preprocess_file = next((p for p in candidates if p.exists()), None)
+    if preprocess_file is None:
+        raise FileNotFoundError(
+            "Could not locate preprocess.py. Expected it either beside this file "
+            "or at <repo>/preprocessing/preprocess.py."
+        )
+
+    spec = importlib.util.spec_from_file_location("team_carrier_pigeon_preprocess", preprocess_file)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load preprocessing module from {preprocess_file}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 #Only runs when the file is executed directly, not when it's imported.
 if __name__ == "__main__":
+    print("\n=== Team Carrier Pigeon: Logistic Regression Baseline ===", flush=True)
     #Reads the parquet files preprocess.py writes; run
     #`python preprocess.py` first if these don't exist yet.
-    #Import the processed-data directory path from preprocess.py.
-    from preprocess import PROCESSED
+    # Load the processed-data directory from the repo's preprocess.py.
+    _preprocess = _load_repo_preprocess_module()
+    PROCESSED = Path(_preprocess.PROCESSED)
+    REPO_ROOT = Path(__file__).resolve().parent.parent
+    print(f"Repository root: {REPO_ROOT}", flush=True)
+    print(f"Processed data directory: {PROCESSED}", flush=True)
 
     #Path to the modeling table (one row per resident per week).
     model_table_path = PROCESSED / "model_table.parquet"
@@ -310,13 +501,20 @@ if __name__ == "__main__":
     #All weekly rows for eval residents.
     eval_df = model_table[model_table["resident_id"].isin(eval_ids)]
 
+    print(
+        f"Loaded split: train_rows={len(train_df)}, eval_rows={len(eval_df)}, "
+        f"train_households={train_df['resident_id'].nunique()}, "
+        f"eval_households={eval_df['resident_id'].nunique()}",
+        flush=True,
+    )
+
     #Train the model, printing train/eval loss along the way.
     trained_model, fitted_preprocessor = train_baseline(train_df, eval_df=eval_df, verbose=True)
     #Compute metrics on both splits.
     results = compare_train_vs_eval(trained_model, fitted_preprocessor, train_df, eval_df)
 
     #Print a header saying which fold was held out.
-    print(f"\nResults -- repeat {REPEAT}, fold {HELD_OUT_FOLD} held out as eval:")
+    print(f"\nResults -- repeat {REPEAT}, fold {HELD_OUT_FOLD} held out as eval:", flush=True)
     #Print one summary line for each split.
     for split_name in ("train", "eval"):
         #Grab that split's metrics dict.
@@ -326,5 +524,36 @@ if __name__ == "__main__":
             #Split name, row count, and event count.
             f"  {split_name}: n_rows={r['n_rows']}  n_events={r['n_events']}  "
             #Brier score, log loss, and ROC AUC, each to 4 decimal places.
-            f"brier={r['brier_score']:.4f}  log_loss={r['log_loss']:.4f}  roc_auc={r['roc_auc']:.4f}"
+            f"brier={r['brier_score']:.4f}  log_loss={r['log_loss']:.4f}  roc_auc={r['roc_auc']:.4f}",
+            flush=True,
         )
+
+    print(
+        f"\nHousehold move-out summary -- cumulative risk over each resident's "
+        f"observed weeks, threshold={HOUSEHOLD_MOVEOUT_THRESHOLD:.2f}:",
+        flush=True,
+    )
+    household_results = {}
+    household_predictions = {}
+    for split_name, split_df in (("train", train_df), ("eval", eval_df)):
+        hm, hp = summarize_household_moveout_classification(
+            trained_model,
+            fitted_preprocessor,
+            split_df,
+            threshold=HOUSEHOLD_MOVEOUT_THRESHOLD,
+        )
+        household_results[split_name] = hm
+        household_predictions[split_name] = hp
+        print_household_moveout_summary(split_name, hm)
+
+    output_dir = REPO_ROOT / "results" / "baseline"
+    metrics_path, classification_path = save_run_outputs(
+        output_dir=output_dir,
+        repeat=REPEAT,
+        fold=HELD_OUT_FOLD,
+        weekly_results=results,
+        household_results=household_results,
+        household_predictions=household_predictions,
+    )
+    print(f"\nSaved metrics to: {metrics_path}", flush=True)
+    print(f"Saved household classifications to: {classification_path}", flush=True)
