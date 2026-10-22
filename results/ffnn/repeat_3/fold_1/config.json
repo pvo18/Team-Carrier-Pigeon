@@ -1,0 +1,17 @@
+{
+  "hidden_dims": [
+    16,
+    8
+  ],
+  "dropout": 0.2,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "batch_size": 64,
+  "max_epochs": 300,
+  "patience": 25,
+  "min_delta": 1e-05,
+  "val_fraction": 0.2,
+  "loss_mode": "bce",
+  "focal_gamma": 2.0,
+  "seed": 343
+}

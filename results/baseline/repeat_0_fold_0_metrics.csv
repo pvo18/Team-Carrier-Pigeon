@@ -1,0 +1,3 @@
+model,repeat,fold,split,n_rows,n_events,brier_score,log_loss,roc_auc,n_households,actual_moveouts,expected_moveouts,predicted_moveouts,threshold,true_positives,false_positives,true_negatives,false_negatives,precision,recall,f1
+logistic_regression,0,0,train,5523,100,0.32983720302581787,0.8885205388069153,0.6246007744790706,355,100,348.4085639284395,355,0.5,100,255,0,0,0.28169014084507044,1.0,0.43956043956043955
+logistic_regression,0,0,eval,1208,25,0.3258080780506134,0.8635791540145874,0.547455621301775,89,25,87.84309699427168,89,0.5,25,64,0,0,0.2808988764044944,1.0,0.43859649122807015
