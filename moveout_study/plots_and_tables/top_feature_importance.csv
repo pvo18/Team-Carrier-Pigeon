@@ -1,0 +1,21 @@
+snapshot,task,model,origin,feature,mean_increase,positive_folds,folds,feature_label
+20261115,weekly,logistic,,first_responder,0.00010370222882,22,25,First-responder indicator
+20261115,weekly,logistic,,commute_band,0.000106666150679,22,25,Commute-distance band
+20261115,weekly,logistic,,outstanding_past4_std,0.0001098278537442,20,25,outstanding past4 std
+20261115,weekly,logistic,,prior_weekly_cycle_fraction,0.0001148280235526,20,25,prior weekly cycle fraction
+20261115,weekly,logistic,,billed_this_week_past8_mean,0.0001222813396091,17,25,8-week average billed
+20261115,weekly,logistic,,paid_this_week_past8_std,0.0001960347947857,23,25,paid this week past8 std
+20261115,weekly,logistic,,billed_this_week_lag1,0.0002699537458638,21,25,Prior-week amount billed
+20261115,weekly,logistic,,prior_monthly_cycle_fraction,0.0003004730697449,18,25,prior monthly cycle fraction
+20261115,weekly,logistic,,unit_known,0.0009210731939889,23,25,unit known
+20261115,weekly,logistic,,prior_credit_cycle_fraction,0.0015851960513223,25,25,prior credit cycle fraction
+20261115,weekly,ffnn,,week_index,7.676885783707281e-05,20,25,Tenure week
+20261115,weekly,ffnn,,first_responder,0.0001134596964517,24,25,First-responder indicator
+20261115,weekly,ffnn,,prior_weekly_cycle_fraction,0.0001336844966279,20,25,prior weekly cycle fraction
+20261115,weekly,ffnn,,billed_this_week_past4_mean,0.0001516292112276,23,25,4-week average billed
+20261115,weekly,ffnn,,billed_this_week_past8_mean,0.0001528823074067,23,25,8-week average billed
+20261115,weekly,ffnn,,paid_this_week_lag1,0.0001851548633337,22,25,Prior-week amount paid
+20261115,weekly,ffnn,,prior_monthly_cycle_fraction,0.0002329930246887,21,25,prior monthly cycle fraction
+20261115,weekly,ffnn,,billed_this_week_lag1,0.0003283823379672,25,25,Prior-week amount billed
+20261115,weekly,ffnn,,unit_known,0.0008797432627447,23,25,unit known
+20261115,weekly,ffnn,,prior_credit_cycle_fraction,0.0014639081588449,25,25,prior credit cycle fraction

@@ -1,0 +1,11 @@
+{
+  "november_15_resident_records": 572,
+  "november_15_household_tenancies": 563,
+  "november_15_household_week_rows": 9628,
+  "november_15_observed_moveouts": 176,
+  "november_15_censored_active_tenancies": 387,
+  "eligible_weekly_rows": 9241,
+  "weekly_positive_labels": 176,
+  "weekly_moveout_rate": 0.0190455578400606,
+  "completed_hyperparameter_trials": 30
+}
