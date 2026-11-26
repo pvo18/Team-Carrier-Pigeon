@@ -1,0 +1,21 @@
+# Execution verification only. Results must not be used for scientific model selection.
+mode: survival_comparison
+feature_set: expanded
+seed: 42
+folds: 5
+repeats: 5
+endpoint_policy: exclude
+censor_date: '2026-09-15'
+expected_households: 444
+expected_rows: 6731
+expected_events: 125
+strict_counts: true
+landmarks: [0]
+horizons: [1, 4]
+epochs: 3
+patience: 2
+neural_seeds: [42]
+hidden_layers: [[4]]
+weight_decays: [0.01]
+cox_penalizers: [0.1]
+bootstrap_replicates: 20

@@ -1,0 +1,51 @@
+batch_size: 64
+bootstrap_replicates: 200
+censor_date: '2026-11-15'
+cox_penalizers:
+- 0.01
+- 0.1
+- 1.0
+dropout: 0.2
+endpoint_policy: exclude
+epochs: 300
+expected_events: 176
+expected_households: 563
+expected_rows: 9628
+feature_set: expanded
+folds: 5
+hidden_layers:
+- - 4
+- - 8
+horizons:
+- 1
+- 4
+- 8
+- 12
+include_sensitive_research_features: false
+landmarks:
+- 0
+- 4
+learning_rate: 0.001
+logistic_hazard:
+  enabled: conditional
+  max_weeks: 12
+  practical_relative_gain: 0.05
+min_delta: 1.0e-05
+minimum_cases: 5
+minimum_censor_survival: 0.05
+mode: survival_comparison
+neural_seeds:
+- 42
+- 43
+- 44
+- 45
+- 46
+patience: 25
+repeats: 5
+require_snapshot_cutoff: true
+seed: 42
+strict_counts: true
+validation_fraction: 0.2
+weight_decays:
+- 0.0001
+- 0.01
