@@ -1,0 +1,13 @@
+01 Input data overview — analysis coverage across three snapshots and the rare weekly move-out label.
+
+02 Tenure and move-out timing — observed duration/censoring and weekly move-out frequency by tenure band.
+
+03 Weekly model results — constant baseline, logistic regression, and FFNN on Brier score, log loss, and AUC.
+
+04 Survival results — classical Cox versus neural CoxPH for 12-week prediction at entry and week 4.
+
+05 Hyperparameter effects — each controlled variation versus its original model; left/up is the preferred quadrant.
+
+06 Feature importance — top inputs by permutation increase in Brier score for logistic regression and FFNN.
+07 Weekly diagnostic curves — ROC, precision–recall, and calibration from averaged held-out predictions.
+08 Paired improvement uncertainty — household-clustered bootstrap intervals for neural-versus-baseline score differences.

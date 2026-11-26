@@ -1,0 +1,11 @@
+{
+  "counts": {
+    "residents": 572,
+    "households": 563,
+    "rows": 9628,
+    "events": 176,
+    "censors": 387
+  },
+  "errors": [],
+  "passed": true
+}

@@ -1,0 +1,297 @@
+{
+  "source_hashes": {
+    "residents.csv": "6f5a2245d9a255e95ec386eeb0e1bad7cd777589a5419412d21131b2b68ab0c1",
+    "weekly_panel.csv": "568f7182da9af760c3599a959900a421928b08059ac77e74528cdfa1ea2b12c7",
+    "invoice_cycles.csv": "e8a5dd815ca57365fcdbbd130c248c486a82d0488c11a0b6c5d9008f965dcac5"
+  },
+  "validation": {
+    "counts": {
+      "residents": 572,
+      "households": 563,
+      "rows": 9628,
+      "events": 176,
+      "censors": 387
+    },
+    "errors": [],
+    "passed": true
+  },
+  "qualified_households": 563,
+  "qualified_events": 176,
+  "feature_count": 98,
+  "config": {
+    "mode": "survival_comparison",
+    "feature_set": "expanded",
+    "seed": 42,
+    "folds": 5,
+    "repeats": 5,
+    "bootstrap_replicates": 200,
+    "censor_date": "2026-11-15",
+    "endpoint_policy": "exclude",
+    "strict_counts": true,
+    "include_sensitive_research_features": false,
+    "landmarks": [
+      0,
+      4
+    ],
+    "horizons": [
+      1,
+      4,
+      8,
+      12
+    ],
+    "validation_fraction": 0.2,
+    "epochs": 300,
+    "patience": 25,
+    "min_delta": 1e-05,
+    "batch_size": 64,
+    "dropout": 0.2,
+    "learning_rate": 0.001,
+    "weight_decays": [
+      0.0001,
+      0.01
+    ],
+    "cox_penalizers": [
+      0.01,
+      0.1,
+      1.0
+    ],
+    "hidden_layers": [
+      [
+        4
+      ],
+      [
+        8
+      ]
+    ],
+    "neural_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "minimum_censor_survival": 0.05,
+    "minimum_cases": 5,
+    "logistic_hazard": {
+      "enabled": "conditional",
+      "max_weeks": 12,
+      "practical_relative_gain": 0.05
+    },
+    "expected_events": 176,
+    "expected_households": 563,
+    "expected_rows": 9628,
+    "require_snapshot_cutoff": true
+  },
+  "classical_trials": [
+    {
+      "trial_id": "cox_penalty_0.001",
+      "factor": "penalizer",
+      "value": 0.001,
+      "penalizer": 0.001,
+      "is_baseline": false
+    },
+    {
+      "trial_id": "cox_penalty_0.01",
+      "factor": "penalizer",
+      "value": 0.01,
+      "penalizer": 0.01,
+      "is_baseline": false
+    },
+    {
+      "trial_id": "cox_penalty_0.1",
+      "factor": "penalizer",
+      "value": 0.1,
+      "penalizer": 0.1,
+      "is_baseline": true
+    },
+    {
+      "trial_id": "cox_penalty_1",
+      "factor": "penalizer",
+      "value": 1.0,
+      "penalizer": 1.0,
+      "is_baseline": false
+    },
+    {
+      "trial_id": "cox_penalty_10",
+      "factor": "penalizer",
+      "value": 10.0,
+      "penalizer": 10.0,
+      "is_baseline": false
+    }
+  ],
+  "neural_trials": [
+    {
+      "trial_id": "neural_baseline",
+      "factor": "baseline",
+      "value": "original",
+      "is_baseline": true,
+      "learning_rate": 0.001,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_lr_0.0003",
+      "factor": "learning_rate",
+      "value": 0.0003,
+      "is_baseline": false,
+      "learning_rate": 0.0003,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_lr_0.003",
+      "factor": "learning_rate",
+      "value": 0.003,
+      "is_baseline": false,
+      "learning_rate": 0.003,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_hidden_4",
+      "factor": "hidden",
+      "value": "[4]",
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        4
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_hidden_16",
+      "factor": "hidden",
+      "value": "[16]",
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        16
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_hidden_16_8",
+      "factor": "hidden",
+      "value": "[16,8]",
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        16,
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_dropout_0",
+      "factor": "dropout",
+      "value": 0.0,
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.0,
+      "weight_decay": 0.0001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_dropout_0.4",
+      "factor": "dropout",
+      "value": 0.4,
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.4,
+      "weight_decay": 0.0001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_weight_decay_0",
+      "factor": "weight_decay",
+      "value": 0.0,
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_weight_decay_0.001",
+      "factor": "weight_decay",
+      "value": 0.001,
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.001,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_weight_decay_0.01",
+      "factor": "weight_decay",
+      "value": 0.01,
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.01,
+      "patience": 25
+    },
+    {
+      "trial_id": "neural_patience_10",
+      "factor": "patience",
+      "value": 10,
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0001,
+      "patience": 10
+    },
+    {
+      "trial_id": "neural_patience_50",
+      "factor": "patience",
+      "value": 50,
+      "is_baseline": false,
+      "learning_rate": 0.001,
+      "hidden": [
+        8
+      ],
+      "dropout": 0.2,
+      "weight_decay": 0.0001,
+      "patience": 50
+    }
+  ],
+  "runtime_seconds": 69.8197672367096,
+  "neural_seed_policy": "one deterministic seed per fold",
+  "selection_metric": "mean outer-test 12-week Brier score"
+}

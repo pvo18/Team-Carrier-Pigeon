@@ -1,0 +1,32 @@
+mode: historical_reproduction
+feature_set: reported
+seed: 42
+folds: 5
+repeats: 5
+bootstrap_replicates: 100
+censor_date: '2026-09-15'
+endpoint_policy: panel
+expected_households: 444
+expected_rows: 6731
+expected_events: 125
+strict_counts: true
+include_sensitive_research_features: false
+landmarks: [0, 4]
+horizons: [1, 4, 8, 12]
+validation_fraction: 0.2
+epochs: 200
+patience: 25
+min_delta: 0.00001
+batch_size: 64
+dropout: 0.2
+learning_rate: 0.001
+weight_decays: [0.0]
+cox_penalizers: [0.1]
+hidden_layers: [[16, 8]]
+neural_seeds: [42]
+minimum_censor_survival: 0.05
+minimum_cases: 5
+logistic_hazard:
+  enabled: conditional
+  max_weeks: 12
+  practical_relative_gain: 0.05

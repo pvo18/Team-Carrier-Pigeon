@@ -1,0 +1,77 @@
+{
+  "starting_households": 563,
+  "qualified_households": 563,
+  "qualified_events": 176,
+  "features": 98,
+  "endpoint_clock": "panel week; events at interval end; partial censor exposure retained",
+  "prospective_feature_provenance": "not_fully_verified",
+  "source_hashes": {
+    "residents.csv": "6f5a2245d9a255e95ec386eeb0e1bad7cd777589a5419412d21131b2b68ab0c1",
+    "weekly_panel.csv": "568f7182da9af760c3599a959900a421928b08059ac77e74528cdfa1ea2b12c7",
+    "invoice_cycles.csv": "e8a5dd815ca57365fcdbbd130c248c486a82d0488c11a0b6c5d9008f965dcac5"
+  },
+  "config": {
+    "mode": "survival_comparison",
+    "feature_set": "expanded",
+    "seed": 42,
+    "folds": 5,
+    "repeats": 5,
+    "bootstrap_replicates": 200,
+    "censor_date": "2026-11-15",
+    "endpoint_policy": "exclude",
+    "strict_counts": true,
+    "include_sensitive_research_features": false,
+    "landmarks": [
+      0,
+      4
+    ],
+    "horizons": [
+      1,
+      4,
+      8,
+      12
+    ],
+    "validation_fraction": 0.2,
+    "epochs": 300,
+    "patience": 25,
+    "min_delta": 1e-05,
+    "batch_size": 64,
+    "dropout": 0.2,
+    "learning_rate": 0.001,
+    "weight_decays": [
+      0.0001,
+      0.01
+    ],
+    "cox_penalizers": [
+      0.01,
+      0.1,
+      1.0
+    ],
+    "hidden_layers": [
+      [
+        4
+      ],
+      [
+        8
+      ]
+    ],
+    "neural_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "minimum_censor_survival": 0.05,
+    "minimum_cases": 5,
+    "logistic_hazard": {
+      "enabled": "conditional",
+      "max_weeks": 12,
+      "practical_relative_gain": 0.05
+    },
+    "expected_households": 563,
+    "expected_rows": 9628,
+    "expected_events": 176,
+    "require_snapshot_cutoff": true
+  }
+}
